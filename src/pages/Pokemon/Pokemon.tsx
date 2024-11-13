@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+
+//Componentes
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+//estilos
 import './style.css';
 
 import successImage from '../../images/Correcto.png';
@@ -77,12 +83,13 @@ const Pokemon = () => {
     if (pokemonList && matchIndex !== null && pokemon.value.toLowerCase() === pokemonList[matchIndex]) {
       setHasWon(true);
     } else {
-      alert('Sigue intentando');
+      toast.error('Nombre incorrecto, sigue intentando.');
     }
   }
 
   return (
     <div>
+      <ToastContainer />
       {hasWon && <img className="success-img" src={successImage} alt="imagen confirmacion" />}
       <div className="container-search">
         {pokemonList && matchIndex !== null ? (
