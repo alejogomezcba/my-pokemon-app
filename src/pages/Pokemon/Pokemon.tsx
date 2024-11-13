@@ -14,8 +14,9 @@ const Pokemon = () => {
   const [pokemonList, setPokemonList] = useState<string[] | null>(null);
   const [matchIndex, setMatchIndex] = useState<number | null>(null);
   const [pokemonName, setPokemonName] = useState<string | null>(null);
+  const [urlImagePokemon, setURLImagePokemon] = useState<string | null>(null);
 
-  async function fetchAllPokemonNames() {
+  const fetchAllPokemonNames = async () => {
     const limit = 100;
     let offset = 0;
     let allPokemonNames: string[] = [];
@@ -32,28 +33,51 @@ const Pokemon = () => {
       hasMore = data.next !== null;
     }
 
-    return allPokemonNames;
+    setPokemonList(allPokemonNames);
+    setMatchIndex(Math.floor(Math.random() * allPokemonNames.length)); 
   }
+
+  const validateAndSetImageURL = async (index: number, retryCount = 0) => {
+    const maxRetries = 5;
+    const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${index + 1}.png`;
+
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        setURLImagePokemon(url);
+      } else if (retryCount < maxRetries) {
+        // Intento con un nuevo índice si la imagen no es válida
+        setMatchIndex(Math.floor(Math.random() * (pokemonList?.length || 0)));
+      } else {
+        console.error("Demasiados intentos fallidos para obtener una imagen válida.");
+      }
+    } catch (error) {
+      console.error("Error al validar la imagen:", error);
+    }
+  };
 
   useEffect(() => {
     if (!pokemonList) {
-      fetchAllPokemonNames().then(names => {
-        setPokemonList(names);
-        setMatchIndex(Math.floor(Math.random() * names.length)); // Configura el índice aleatorio solo después de cargar los nombres
-      });
+      fetchAllPokemonNames();
     }
   }, [pokemonList]);
+
+  useEffect(() => {
+    if (matchIndex !== null) {
+      validateAndSetImageURL(matchIndex);
+    }
+  }, [matchIndex]);
 
   const handleSubmit = (event: React.FormEvent<Form>) => {
     event.preventDefault();
     const { pokemon } = event.currentTarget;
 
-    setPokemonName(pokemon.value.toLowerCase())
+    setPokemonName(pokemon.value.toLowerCase());
 
     if (pokemonList && matchIndex !== null && pokemon.value.toLowerCase() === pokemonList[matchIndex]) {
       setHasWon(true);
     } else {
-      alert('Sigue intentando')
+      alert('Sigue intentando');
     }
   }
 
@@ -68,7 +92,7 @@ const Pokemon = () => {
               style={{
                 filter: hasWon ? '' : "brightness(0)"
               }}
-              src={`https://github.com/PokeAPI/sprites/blob/master/sprites/pokemon/${matchIndex + 1}.png?raw=true`}
+              src={urlImagePokemon || questionImage}
               alt="pokemon"
             />
             {!hasWon && <img className="confirmacion-img" src={questionImage} alt="imagen pregunta" />}
@@ -93,7 +117,7 @@ const Pokemon = () => {
         <button onClick={() => location.reload()}>Adivinar Otro</button>
       ) : (
         <form onSubmit={handleSubmit} className="submit-form">
-          <input type="text" name="pokemon" autoFocus/>
+          <input type="text" name="pokemon" autoFocus />
           <button type="submit">Adivinar</button>
           <img className="reload-img" src={reloadImage} alt="imagen reload" onClick={() => location.reload()} />
         </form>
